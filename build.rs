@@ -128,6 +128,9 @@ fn main() {
         println!("cargo:rustc-cfg=portable_atomic_no_strict_provenance");
     }
 
+    // asm! on AArch64, Arm, RISC-V, x86, and x86_64 stabilized in Rust 1.59 (nightly-2021-12-16): https://github.com/rust-lang/rust/pull/91728
+    let no_asm = true; // !version.probe(59, 2021, 12, 15);
+
     // For Miri and ThreadSanitizer. (aarch64, arm64ec, s390x, powerpc64)
     // https://github.com/rust-lang/rust/pull/97423 merged in Rust 1.64 (nightly-2022-06-30).
     // https://github.com/rust-lang/rust/pull/141507 merged in Rust 1.89 (nightly-2025-05-31).
@@ -135,17 +138,17 @@ fn main() {
         && version.probe(64, 2022, 6, 29)
         && !version.probe(89, 2025, 5, 30)
         && (target_arch != "powerpc64" || version.llvm >= 15)
+        && !no_asm
     {
         println!("cargo:rustc-cfg=portable_atomic_atomic_intrinsics");
     }
 
-    // asm! on AArch64, Arm, RISC-V, x86, and x86_64 stabilized in Rust 1.59 (nightly-2021-12-16): https://github.com/rust-lang/rust/pull/91728
-    let no_asm = !version.probe(59, 2021, 12, 15);
     if no_asm {
         if version.nightly
             && version.probe(46, 2020, 6, 20)
             && ((target_arch != "x86" && target_arch != "x86_64") || version.llvm >= 10)
             && is_allowed_feature("asm")
+            && !no_asm
         {
             // This feature was added in Rust 1.45 (nightly-2020-05-20), but
             // concat! in asm! requires Rust 1.46 (nightly-2020-06-21).
@@ -192,6 +195,7 @@ fn main() {
         if version.nightly
             && version.probe(40, 2019, 10, 13)
             && is_allowed_feature("cfg_target_has_atomic")
+            && false
         {
             // The part of this feature we use has not been changed since nightly-2019-10-14
             // until it was stabilized, so it can safely be enabled in nightly for that period.
